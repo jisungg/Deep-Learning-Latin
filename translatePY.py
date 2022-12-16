@@ -211,7 +211,7 @@ test = load_clean_sentences('english-latin-test.pkl')
 eng_tokenizer = create_tokenizer(dataset[:, 0])
 eng_vocab_size = len(eng_tokenizer.word_index) + 1
 eng_length = max_length(dataset[:, 0])
-# prepare german tokenizer
+# prepare latin tokenizer
 lat_tokenizer = create_tokenizer(dataset[:, 1])
 lat_vocab_size = len(lat_tokenizer.word_index) + 1
 lat_length = max_length(dataset[:, 1])
