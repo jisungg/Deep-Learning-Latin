@@ -1,1 +1,1 @@
-# AI-Deep-Learning-Latin
+# Deep-Learning-Latin
