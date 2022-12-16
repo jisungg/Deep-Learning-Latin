@@ -1,10 +1,29 @@
 # -*- coding: utf-8 -*-
 import string
 import re
-from pickle import dump
-from unicodedata import normalize
-from numpy import array
 import pandas as pd
+import numpy as np
+
+from pickle import load, dump
+from unicodedata import normalize
+from numpy import array, argmax
+from numpy.random import rand, shuffle
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from keras.utils import to_categorical
+from keras.utils.vis_utils import plot_model
+from keras.models import Sequential
+from keras.layers import LSTM
+from keras.layers import Dense
+from keras.layers import Embedding
+from keras.layers import RepeatVector
+from keras.layers import TimeDistributed
+from keras.callbacks import ModelCheckpoint
+from keras.models import load_model
+from nltk.translate.bleu_score import corpus_bleu
+
+
+
 
 # load doc into memory
 def load_doc(filename):
@@ -24,14 +43,12 @@ def save_clean_data(sentences, filename):
 	dump(sentences, open(filename, 'wb'))
 	print('Saved: %s' % filename)
 
-import pandas as pd
-
 from google.colab import drive
 drive.mount("/content/drive")
 
 # load dataset
 filename = "/content/drive/My Drive/Latin Translation ML project/Dataset1.csv"
-doc=load_doc(filename)
+doc = load_doc(filename)
 
 dataset_original = pd.read_csv(filename,converters={i: str for i in range(0, 2)})
 dataset_original
@@ -43,13 +60,6 @@ save_clean_data(clean_pairs, 'english-latin.pkl')
 # spot check
 for i in range(100):
 	print('[%s] => [%s]' % (clean_pairs[i,0], clean_pairs[i,1]))
-
-clean_pairs
-
-from pickle import load
-from pickle import dump
-from numpy.random import rand
-from numpy.random import shuffle
  
 # load a clean dataset
 def load_clean_sentences(filename):
@@ -74,19 +84,6 @@ save_clean_data(dataset, 'english-latin-both.pkl')
 save_clean_data(train, 'english-latin-train.pkl')
 save_clean_data(test, 'english-latin-test.pkl')
 
-from pickle import load
-from numpy import array
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-from keras.utils import to_categorical
-from keras.utils.vis_utils import plot_model
-from keras.models import Sequential
-from keras.layers import LSTM
-from keras.layers import Dense
-from keras.layers import Embedding
-from keras.layers import RepeatVector
-from keras.layers import TimeDistributed
-from keras.callbacks import ModelCheckpoint
 
 # load a clean dataset
 def load_clean_sentences(filename):
@@ -139,14 +136,11 @@ test = load_clean_sentences('english-latin-test.pkl')
 eng_tokenizer = create_tokenizer(dataset[:, 0])
 eng_vocab_size = len(eng_tokenizer.word_index) + 1
 eng_length = max_length(dataset[:, 0])
-print('English Vocabulary Size: %d' % eng_vocab_size)
-print('English Max Length: %d' % (eng_length))
+
 # prepare latin tokenizer
 lat_tokenizer = create_tokenizer(dataset[:, 1])
 lat_vocab_size = len(lat_tokenizer.word_index) + 1
 lat_length = max_length(dataset[:, 1])
-print('Latin Vocabulary Size: %d' % lat_vocab_size)
-print('Latin Max Length: %d' % (lat_length))
 
 # prepare training data
 trainX = encode_sequences(lat_tokenizer, lat_length, train[:, 1])
@@ -168,18 +162,7 @@ filename = 'Latinmodel2.h5'
 checkpoint = ModelCheckpoint(filename, monitor='val_loss', verbose=1, save_best_only=True, mode='min')
 model.fit(trainX, trainY, epochs=120, batch_size=64, validation_data=(testX, testY), callbacks=[checkpoint], verbose=2)
 
-!cp Latinmodel2.h5 drive/My\ Drive/
-
-import numpy as np
-tk= Tokenizer()
-
-from pickle import load
-from numpy import array
-from numpy import argmax
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-from keras.models import load_model
-from nltk.translate.bleu_score import corpus_bleu
+tk = Tokenizer()
 
 model_path = '/content/Latinmodel2.h5'
 
@@ -201,42 +184,6 @@ def word_for_id(integer, tokenizer):
 		if index == integer:
 			return word
 	return None
-
-preds = model.predict_classes(testX.reshape((testX.shape[0],testX.shape[1])))
-
-preds_text = []
-for i in preds:
-       temp = []
-       for j in range(len(i)):
-            t = word_for_id(i[j], eng_tokenizer)
-            if j > 0: 
-                if (t == word_for_id(i[j-1], eng_tokenizer)) or (t == None):
-                     temp.append('')
-                else:
-                     temp.append(t)
-            else:
-                   if(t == None):
-                          temp.append('')
-                   else:
-                          temp.append(t) 
-
-       preds_text.append(' '.join(temp))
-
-pred_df = pd.DataFrame({'actual' : test[:,0], 'predicted' : preds_text})
-pred_df.sample(60)
-
-Input_latin = ['longa']
-source = encode_sequences(lat_tokenizer,lat_length,Input_latin)
-predict_sequence(model, eng_tokenizer, source)
-
-from pickle import load
-from numpy import array
-from numpy import argmax
-import tensorflow as tf
-from tf.keras.preprocessing.text import Tokenizer
-from tf.keras.preprocessing.sequence import pad_sequences
-from tf.keras.models import load_model
-from tf.nltk.translate.bleu_score import corpus_bleu
  
 # evaluate the skill of the model
 def evaluate_model(model, tokenizer, sources, raw_dataset):
